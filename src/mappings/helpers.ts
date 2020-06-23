@@ -1,10 +1,10 @@
 /* eslint-disable prefer-const */
-import { log, BigInt, BigDecimal, Address } from '@graphprotocol/graph-ts'
+import { log, BigInt, BigDecimal, Address, EthereumEvent } from '@graphprotocol/graph-ts'
 import { ERC20 } from '../types/Factory/ERC20'
 import { ERC20SymbolBytes } from '../types/Factory/ERC20SymbolBytes'
 import { ERC20NameBytes } from '../types/Factory/ERC20NameBytes'
-import { User, LiquidityPosition } from '../types/schema'
 import { Factory as FactoryContract } from '../types/templates/Pair/Factory'
+import { User, Bundle, Token, LiquidityPosition, LiquidityPositionSnapshot, Pair } from '../types/schema'
 
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
 export const FACTORY_ADDRESS = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'
@@ -133,16 +133,17 @@ export function createLiquidityPosition(exchange: Address, user: Address): Liqui
     .toHexString()
     .concat('-')
     .concat(user.toHexString())
-  let liquidityTokenBalance = LiquidityPosition.load(id)
-  if (liquidityTokenBalance === null) {
-    liquidityTokenBalance = new LiquidityPosition(id)
-    liquidityTokenBalance.liquidityTokenBalance = ZERO_BD
-    liquidityTokenBalance.pair = exchange.toHexString()
-    liquidityTokenBalance.user = user.toHexString()
-    liquidityTokenBalance.save()
+  let liquidityPosition = LiquidityPosition.load(id)
+  if (liquidityPosition === null) {
+    liquidityPosition = new LiquidityPosition(id)
+    liquidityPosition.liquidityTokenBalance = ZERO_BD
+    liquidityPosition.pair = exchange.toHexString()
+    liquidityPosition.user = user.toHexString()
+    liquidityPosition.historicalSnapshots = []
+    liquidityPosition.save()
   }
-  if (liquidityTokenBalance == null) log.error('LiquidityTokenBalance is null', [id])
-  return liquidityTokenBalance as LiquidityPosition
+  if (liquidityPosition == null) log.error('LiquidityTokenBalance is null', [id])
+  return liquidityPosition as LiquidityPosition
 }
 
 export function createUser(address: Address): void {
@@ -152,4 +153,33 @@ export function createUser(address: Address): void {
     user.usdSwapped = ZERO_BD
     user.save()
   }
+}
+
+export function createLiquiditySnapshot(position: LiquidityPosition, event: EthereumEvent): void {
+  let timestamp = event.block.timestamp.toI32()
+  let bundle = Bundle.load('1')
+  let pair = Pair.load(position.pair)
+  let token0 = Token.load(pair.token0)
+  let token1 = Token.load(pair.token1)
+
+  // create new snapshot
+  let snapshot = new LiquidityPositionSnapshot(position.id.concat(timestamp.toString()))
+  snapshot.timestamp = timestamp
+  snapshot.block = event.block.number.toI32()
+  snapshot.user = position.user
+  snapshot.pair = position.pair
+  snapshot.token0PriceUSD = token0.derivedETH.times(bundle.ethPrice)
+  snapshot.token1PriceUSD = token1.derivedETH.times(bundle.ethPrice)
+  snapshot.reserve0 = pair.reserve0
+  snapshot.reserve1 = pair.reserve1
+  snapshot.reserveUSD = pair.reserveUSD
+  snapshot.liquidityTokenTotalSupply = pair.totalSupply
+  snapshot.liquidityTokenBalance = position.liquidityTokenBalance
+  snapshot.save()
+
+  // add snapshot to lqiudiity position array
+  let snapshots = position.historicalSnapshots
+  snapshots.push(snapshot.id)
+  position.historicalSnapshots = snapshots
+  position.save()
 }

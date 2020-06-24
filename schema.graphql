@@ -99,6 +99,14 @@ type User @entity {
   usdSwapped: BigDecimal!
 }
 
+type UserDayData @entity {
+  id: ID!
+  date: Int!
+  dailySwapped: BigDecimal!
+  liquidityPositions: [LiquidityPosition!]
+  liquidityValueUSD: BigDecimal!
+}
+
 type LiquidityPosition @entity {
   id: ID!
   user: User!
@@ -266,6 +274,9 @@ type PairDayData @entity {
   # reserves
   reserve0: BigDecimal!
   reserve1: BigDecimal!
+
+  # total supply for LP calculations
+  totalSupply: BigDecimal!
 
   # derived liquidity
   reserveUSD: BigDecimal!

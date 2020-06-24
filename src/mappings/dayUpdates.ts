@@ -1,7 +1,17 @@
 import { PairHourData } from './../types/schema'
 /* eslint-disable prefer-const */
 import { BigInt, BigDecimal, EthereumEvent } from '@graphprotocol/graph-ts'
-import { Pair, Bundle, Token, UniswapFactory, UniswapDayData, PairDayData, TokenDayData } from '../types/schema'
+import {
+  Pair,
+  Bundle,
+  Token,
+  UniswapFactory,
+  UniswapDayData,
+  UserDayData,
+  PairDayData,
+  TokenDayData,
+  User
+} from '../types/schema'
 import { ONE_BI, ZERO_BD, ZERO_BI, FACTORY_ADDRESS } from './helpers'
 
 // max number of entities to store
@@ -49,6 +59,7 @@ export function updatePairDayData(event: EthereumEvent): void {
     let pairDayData = new PairDayData(dayPairID)
     let pair = Pair.load(event.address.toHexString())
     pairDayData.date = dayStartTimestamp
+    pairDayData.totalSupply = pair.totalSupply
     pairDayData.token0 = pair.token0
     pairDayData.token1 = pair.token1
     pairDayData.pairAddress = event.address
@@ -62,6 +73,7 @@ export function updatePairDayData(event: EthereumEvent): void {
     pairDayData.save()
   }
   pairDayData = PairDayData.load(dayPairID)
+  pairDayData.totalSupply = pair.totalSupply
   pairDayData.reserve0 = pair.reserve0
   pairDayData.reserve1 = pair.reserve1
   pairDayData.reserveUSD = pair.reserveUSD

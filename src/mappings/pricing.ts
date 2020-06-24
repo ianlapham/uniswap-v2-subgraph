@@ -19,7 +19,6 @@ export function findEthPerToken(token: Token, maxDepthReached: boolean): BigDeci
   let tokenWethPair = factoryContract.getPair(Address.fromString(token.id), Address.fromString(WETH_ADDRESS))
   if (tokenWethPair.toHexString() != ADDRESS_ZERO) {
     let wethPair = Pair.load(tokenWethPair.toHexString())
-
     // testing catch for DAI / WETH price
     if (wethPair === null) {
       return ZERO_BD

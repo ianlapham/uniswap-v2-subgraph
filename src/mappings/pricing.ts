@@ -1,4 +1,5 @@
 /* eslint-disable prefer-const */
+import { log } from '@graphprotocol/graph-ts'
 import { Pair, Token, Bundle } from '../types/schema'
 import { BigDecimal, Address } from '@graphprotocol/graph-ts/index'
 import { ZERO_BD, factoryContract, ADDRESS_ZERO } from './helpers'
@@ -16,9 +17,14 @@ export function getEthPriceInUSD(): BigDecimal {
  **/
 export function findEthPerToken(token: Token, maxDepthReached: boolean): BigDecimal {
   let tokenWethPair = factoryContract.getPair(Address.fromString(token.id), Address.fromString(WETH_ADDRESS))
-
   if (tokenWethPair.toHexString() != ADDRESS_ZERO) {
     let wethPair = Pair.load(tokenWethPair.toHexString())
+
+    // testing catch for DAI / WETH price
+    if (wethPair === null) {
+      return ZERO_BD
+    }
+
     if (wethPair.token0 == token.id) {
       // our token is token 0
       return wethPair.token1Price
@@ -28,7 +34,6 @@ export function findEthPerToken(token: Token, maxDepthReached: boolean): BigDeci
     }
   } else if (!maxDepthReached) {
     let allPairs = token.allPairs as Array<string>
-
     // sort pairs by reserves to get best estimate
     let sortedPairs = allPairs.sort((addressA, addressB) => {
       let pairA = Pair.load(addressA)
@@ -61,7 +66,8 @@ export function findEthPerToken(token: Token, maxDepthReached: boolean): BigDeci
       }
     }
   }
-  return ZERO_BD /** @todo may want to return null */
+
+  return ZERO_BD
 }
 
 // token where amounts should contribute to tracked volume and liquidity

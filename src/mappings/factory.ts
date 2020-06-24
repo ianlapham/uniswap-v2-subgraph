@@ -13,10 +13,10 @@ import {
   fetchTokenTotalSupply
 } from './helpers'
 
-// ian coin 0x19c506211A26A67Ad7E6D45CD274bAD1863f8667
-// ian weth pair 0x07762371f09ba11c9df64ced901cad7ff5104100
-
-let INCLUDED_PAIRS: string[] = ['0x07762371f09ba11c9df64ced901cad7ff5104100']
+let INCLUDED_PAIRS: string[] = [
+  '0x07762371f09ba11c9df64ced901cad7ff5104100', // ian / Weth
+  '0xce5a6d3868293d9cc637ce81dcd5e24a388f737b' // ian / dai
+]
 
 export function handleNewPair(event: PairCreated): void {
   log.debug('event address {}', [event.params.pair.toHexString()])
